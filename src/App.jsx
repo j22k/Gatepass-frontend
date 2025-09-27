@@ -13,6 +13,7 @@ import UserDashboard from './pages/dashboards/UserDashboard'
 import ReceptionistDashboard from './pages/dashboards/ReceptionistDashboard'
 import ApproverDashboard from './pages/dashboards/ApproverDashboard'
 import WorkflowManagementPage from './pages/dashboards/WorkflowManagementPage'
+import VisitorRequestsPage from './pages/dashboards/VisitorRequestsPage'
 
 function App() {
   return (
@@ -68,6 +69,12 @@ function App() {
           <Route path="/workflow-management" element={
             <ProtectedRoute>
               <WorkflowManagementPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/visitor-requests" element={
+            <ProtectedRoute>
+              <VisitorRequestsPage />
             </ProtectedRoute>
           } />
           

@@ -7,6 +7,7 @@ import {
   Clock,
   CheckCircle,
   Warehouse,
+  UserCheck,
 } from 'lucide-react'
 
 const AdminDashboard = () => {
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
         <h3 className="text-lg font-medium text-gray-900 mb-4">
           Quick Actions
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/warehouses"
             className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow border border-primary-200"
@@ -81,6 +82,14 @@ const AdminDashboard = () => {
             <FileText className="h-8 w-8 text-primary-600 mb-2" />
             <h4 className="text-lg font-medium text-gray-900">Visitor Types</h4>
             <p className="text-sm text-gray-600">Manage visitor types</p>
+          </Link>
+          <Link
+            to="/visitor-requests"
+            className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow border border-primary-200"
+          >
+            <UserCheck className="h-8 w-8 text-primary-600 mb-2" />
+            <h4 className="text-lg font-medium text-gray-900">Visitor Requests</h4>
+            <p className="text-sm text-gray-600">Manage visitor requests</p>
           </Link>
         </div>
       </div>

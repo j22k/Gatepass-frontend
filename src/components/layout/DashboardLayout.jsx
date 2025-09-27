@@ -11,7 +11,8 @@ import {
   FileText,
   Users,
   Warehouse,
-  Workflow, // Add this import for the icon
+  Workflow,
+  UserCheck, // Add this import for Visitor Requests icon
 } from 'lucide-react'
 import Button from '../common/Button'
 
@@ -25,7 +26,8 @@ const DashboardLayout = ({ children, title }) => {
       { name: 'Users', href: '/users', icon: Users, current: false },
       { name: 'Warehouses', href: '/warehouses', icon: Warehouse, current: false },
       { name: 'Visitor Types', href: '/visitor-types', icon: FileText, current: false },
-      { name: 'Workflow Management', href: '/workflow-management', icon: Workflow, current: false }, // Add this
+      { name: 'Visitor Requests', href: '/visitor-requests', icon: UserCheck, current: false }, // Add this line
+      { name: 'Workflow Management', href: '/workflow-management', icon: Workflow, current: false },
     ] : []),
     // Add role-specific links if needed, e.g., for Receptionist: Visitor Requests
   ]
