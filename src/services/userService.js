@@ -42,5 +42,10 @@ export const userService = {
   deleteUser: async (id) => {
     const response = await api.delete(`/api/users/${id}`)
     return response.data
+  },
+
+  getUsersByWarehouseId: async (warehouseId) => {
+    const response = await api.get(`/api/users/warehouse/${warehouseId}`)
+    return response.data.data
   }
 }

@@ -13,7 +13,7 @@ const WorkflowManagementPage = () => {
   const [selectedWarehouse, setSelectedWarehouse] = useState('')
   const [workflows, setWorkflows] = useState([])
   const [visitorTypes, setVisitorTypes] = useState([])
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState([]) // This will be warehouse-specific users
   const [loading, setLoading] = useState(true)
   const [workflowLoading, setWorkflowLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -59,6 +59,16 @@ const WorkflowManagementPage = () => {
     }
   }
 
+  const fetchUsersByWarehouse = async (warehouseId) => {
+    try {
+      const data = await userService.getUsersByWarehouseId(warehouseId)
+      setUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching users by warehouse:', error)
+      setUsers([])
+    }
+  }
+
   const handleWarehouseChange = async (warehouseId) => {
     setSelectedWarehouse(warehouseId)
     if (warehouseId) {
@@ -66,6 +76,7 @@ const WorkflowManagementPage = () => {
       try {
         const data = await warehouseService.getWorkflowsByWarehouse(warehouseId)
         setWorkflows(data || [])
+        await fetchUsersByWarehouse(warehouseId) // Fetch users for this warehouse
       } catch (error) {
         console.error('Error fetching workflows:', error)
         setWorkflows([])
@@ -74,6 +85,7 @@ const WorkflowManagementPage = () => {
       }
     } else {
       setWorkflows([])
+      setUsers([])
     }
   }
 

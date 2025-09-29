@@ -14,6 +14,7 @@ import ReceptionistDashboard from './pages/dashboards/ReceptionistDashboard'
 import ApproverDashboard from './pages/dashboards/ApproverDashboard'
 import WorkflowManagementPage from './pages/dashboards/WorkflowManagementPage'
 import VisitorRequestsPage from './pages/dashboards/VisitorRequestsPage'
+import WarehouseTimeSlotPage from './pages/dashboards/WarehouseTimeSlotPage'
 
 function App() {
   return (
@@ -75,6 +76,12 @@ function App() {
           <Route path="/visitor-requests" element={
             <ProtectedRoute>
               <VisitorRequestsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/warehouse-time-slots" element={
+            <ProtectedRoute>
+              <WarehouseTimeSlotPage />
             </ProtectedRoute>
           } />
           

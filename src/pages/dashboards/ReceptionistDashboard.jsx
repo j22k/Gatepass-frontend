@@ -1,9 +1,13 @@
-import { useAuth } from '../../context/authContext'
-import DashboardLayout from '../../components/layout/DashboardLayout'
+import { useState, useEffect } from 'react'
 import { FileText, Clock, CheckCircle, Users } from 'lucide-react'
+import { useAuth } from '../../context/authContext'
+import { visitorService } from '../../services/visitorService'
+import DashboardLayout from '../../components/layout/DashboardLayout'
 
 const ReceptionistDashboard = () => {
   const { user } = useAuth()
+  const [visitorRequests, setVisitorRequests] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const stats = [
     { name: 'Pending Requests', value: '12', icon: Clock, change: '+3%' },
@@ -11,6 +15,27 @@ const ReceptionistDashboard = () => {
     { name: 'Total Visitors', value: '45', icon: Users, change: '+2%' },
     { name: 'Active Sessions', value: '3', icon: FileText, change: '0%' },
   ]
+
+  useEffect(() => {
+    fetchVisitorRequests()
+  }, [])
+
+  const fetchVisitorRequests = async () => {
+    try {
+      const data = await visitorService.getVisitorRequestsByUserId(user.id)
+      if (Array.isArray(data)) {
+        setVisitorRequests(data)
+      } else {
+        console.error('Fetched data is not an array:', data)
+        setVisitorRequests([])
+      }
+    } catch (error) {
+      console.error('Error fetching visitor requests:', error)
+      setVisitorRequests([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <DashboardLayout title="Receptionist Dashboard" user={user}>
@@ -55,10 +80,84 @@ const ReceptionistDashboard = () => {
             <p className="mt-1 text-sm text-gray-600">
               Welcome, {user.name}! Manage incoming visitor requests at reception.
             </p>
-            {/* Placeholder for visitor request list - integrate with API when available */}
-            <div className="mt-4 text-center text-gray-500">
-              Visitor request management coming soon.
-            </div>
+            {loading ? (
+              <div className="text-center py-8">Loading...</div>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Visitor Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Warehouse
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Time Slot
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        From
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        To
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {visitorRequests.map((request) => (
+                      <tr key={request.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {request.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.phone}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(request.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.status}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.visitorTypeName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.warehouseName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.timeSlotName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.from}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {request.to}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>

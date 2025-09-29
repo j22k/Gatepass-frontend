@@ -90,7 +90,40 @@ const LandingPage = () => {
       reset() // Reset form after successful submission
     } catch (error) {
       console.error('Error submitting visitor request:', error)
-      alert('Failed to submit request. Please try again.')
+      
+      // Handle different error types based on backend response
+      let errorMessage = 'Failed to submit request. Please try again.'
+      
+      if (error.response) {
+        const { status, data } = error.response
+        
+        switch (status) {
+          case 400:
+            if (data.message === 'Invalid visitor type ID') {
+              errorMessage = 'Please select a valid visitor type.'
+            } else if (data.message === 'Invalid warehouse ID') {
+              errorMessage = 'Please select a valid warehouse.'
+            } else if (data.message === 'Invalid warehouse time slot ID') {
+              errorMessage = 'Please select a valid time slot.'
+            } else {
+              errorMessage = data.message || 'Invalid request data. Please check your inputs.'
+            }
+            break
+          case 409:
+            errorMessage = 'A similar visitor request already exists for this date, warehouse, and time slot.'
+            break
+          case 500:
+            errorMessage = 'Server error occurred. Please try again later.'
+            break
+          default:
+            errorMessage = data.message || 'An unexpected error occurred.'
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = 'Network error. Please check your connection and try again.'
+      }
+      
+      alert(errorMessage)
     }
   }
 

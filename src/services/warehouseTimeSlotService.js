@@ -43,6 +43,24 @@ export const warehouseTimeSlotService = {
     return response.data.data
   },
 
+  // Get all warehouse time slots
+  getAllTimeSlots: async () => {
+    const response = await api.get('/api/warehouse-time-slots/getall')
+    return response.data.data
+  },
+
+  // Get time slots by warehouse ID
+  getTimeSlotsByWarehouseId: async (warehouseId) => {
+    const response = await api.get(`/api/warehouse-time-slots/${warehouseId}`)
+    return response.data.data
+  },
+
+  // Create time slot by warehouse ID
+  createTimeSlotByWarehouseId: async (warehouseId, data) => {
+    const response = await api.post(`/api/warehouse-time-slots/warehouse/${warehouseId}`, data)
+    return response.data.data
+  },
+
   updateTimeSlot: async (id, data) => {
     const response = await api.put(`/api/warehouse-time-slots/${id}`, data)
     return response.data.data
