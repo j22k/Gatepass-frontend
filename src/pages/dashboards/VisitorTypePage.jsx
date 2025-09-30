@@ -1,25 +1,34 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, Edit, Trash2, FileText } from 'lucide-react'
+import { Plus, Edit, Eye, EyeOff, FileText, Search } from 'lucide-react' // Add Eye, EyeOff icons
 import { visitorTypeService } from '../../services/visitorTypeService'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import Confirm from '../../components/common/Confirm' // Add import for custom Confirm
 
 const VisitorTypePage = () => {
   const [visitorTypes, setVisitorTypes] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingVisitorType, setEditingVisitorType] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('') // Add search state
+  const [showDisabled, setShowDisabled] = useState(false) // Add state for showing disabled
+  const [confirmOpen, setConfirmOpen] = useState(false) // Add state for confirm dialog
+  const [confirmMessage, setConfirmMessage] = useState('') // Add state for confirm message
+  const [confirmAction, setConfirmAction] = useState(null) // Add state for confirm action callback
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
   useEffect(() => {
     fetchVisitorTypes()
-  }, [])
+  }, [showDisabled]) // Refetch when showDisabled changes
 
   const fetchVisitorTypes = async () => {
+    setLoading(true)
     try {
-      const data = await visitorTypeService.getAllVisitorTypes()
+      const data = showDisabled 
+        ? await visitorTypeService.getAllDisabledVisitorTypes()
+        : await visitorTypeService.getAllVisitorTypes()
       if (Array.isArray(data)) {
         setVisitorTypes(data)
       } else {
@@ -56,15 +65,30 @@ const VisitorTypePage = () => {
     setModalOpen(true)
   }
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this visitor type?')) {
+  const handleDisable = async (id) => {
+    setConfirmMessage('Are you sure you want to disable this visitor type?')
+    setConfirmAction(() => async () => {
       try {
-        await visitorTypeService.deleteVisitorType(id)
+        await visitorTypeService.disableVisitorType(id)
         fetchVisitorTypes()
       } catch (error) {
-        console.error('Error deleting visitor type:', error)
+        console.error('Error disabling visitor type:', error)
       }
-    }
+    })
+    setConfirmOpen(true)
+  }
+
+  const handleEnable = async (id) => {
+    setConfirmMessage('Are you sure you want to enable this visitor type?')
+    setConfirmAction(() => async () => {
+      try {
+        await visitorTypeService.enableVisitorType(id)
+        fetchVisitorTypes()
+      } catch (error) {
+        console.error('Error enabling visitor type:', error)
+      }
+    })
+    setConfirmOpen(true)
   }
 
   const openCreateModal = () => {
@@ -73,15 +97,45 @@ const VisitorTypePage = () => {
     setModalOpen(true)
   }
 
+  // Filter visitor types based on search term
+  const filteredVisitorTypes = visitorTypes.filter(type =>
+    type.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <DashboardLayout title="Visitor Types">
       <div className="px-4 py-6 sm:px-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Manage Visitor Types</h2>
-          <Button onClick={openCreateModal} className="bg-primary-600 hover:bg-primary-700 text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Visitor Type
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={openCreateModal} className="bg-primary-600 hover:bg-primary-700 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Visitor Type
+            </Button>
+            <Button 
+              onClick={() => setShowDisabled(!showDisabled)} 
+              variant="outline"
+              className="bg-gray-100 hover:bg-gray-200"
+            >
+              {showDisabled ? 'Show Active' : 'Show Disabled'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Search Input */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -93,17 +147,25 @@ const VisitorTypePage = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {Array.isArray(visitorTypes) && visitorTypes.map((visitorType) => (
+                  {Array.isArray(filteredVisitorTypes) && filteredVisitorTypes.map((visitorType) => (
                     <tr key={visitorType.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <FileText className="w-6 h-6 text-primary-600 mr-3" />
                           <div className="text-sm font-medium text-gray-900">{visitorType.name}</div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          visitorType.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {visitorType.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
@@ -115,14 +177,25 @@ const VisitorTypePage = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(visitorType.id)}
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {visitorType.isActive ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDisable(visitorType.id)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              <EyeOff className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEnable(visitorType.id)}
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -165,6 +238,16 @@ const VisitorTypePage = () => {
             </div>
           </div>
         )}
+
+        <Confirm
+          message={confirmMessage}
+          isOpen={confirmOpen}
+          onConfirm={() => {
+            if (confirmAction) confirmAction()
+            setConfirmOpen(false)
+          }}
+          onCancel={() => setConfirmOpen(false)}
+        />
       </div>
     </DashboardLayout>
   )

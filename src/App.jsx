@@ -4,7 +4,6 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import LoginPage from './pages/auth/LoginPage'
 import UnauthorizedPage from './pages/auth/UnauthorizedPage'
 import NotFoundPage from './pages/NotFoundPage'
-import LandingPage from './pages/LandingPage'
 import WarehousePage from './pages/dashboards/WarehousePage'
 import UserPage from './pages/dashboards/UserPage'
 import VisitorTypePage from './pages/dashboards/VisitorTypePage'
@@ -21,8 +20,8 @@ function App() {
     <AuthProvider>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          {/* <Route path="/" element={<LandingPage />} /> */}
+          <Route path="/" element={<LoginPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} /> 
           
           <Route path="/admin/admin-dashboard" element={

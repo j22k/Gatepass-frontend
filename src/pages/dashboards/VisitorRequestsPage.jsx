@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { visitorService } from '../../services/visitorService'
 import DashboardLayout from '../../components/layout/DashboardLayout'
+import { Search } from 'lucide-react' // Add Search icon
 
 const VisitorRequestsPage = () => {
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('') // Add search state
 
   useEffect(() => {
     fetchVisitors()
@@ -27,11 +29,35 @@ const VisitorRequestsPage = () => {
     }
   }
 
+  // Filter visitors based on search term
+  const filteredVisitors = visitors.filter(visitor =>
+    visitor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    visitor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    visitor.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    visitor.status.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <DashboardLayout title="Visitor Requests">
       <div className="px-4 py-6 sm:px-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Manage Visitor Requests</h2>
+        </div>
+
+        {/* Search Input */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by name, email, phone, or status..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -58,7 +84,7 @@ const VisitorRequestsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {Array.isArray(visitors) && visitors.map((visitor) => (
+                  {Array.isArray(filteredVisitors) && filteredVisitors.map((visitor) => (
                     <tr key={visitor.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{visitor.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{visitor.email}</td>

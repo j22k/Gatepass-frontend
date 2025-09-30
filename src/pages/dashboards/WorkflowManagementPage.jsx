@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Search } from 'lucide-react' // Add Search icon
 import { warehouseService } from '../../services/warehouseService'
 import { visitorTypeService } from '../../services/visitorTypeService'
 import { userService } from '../../services/userService'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import Alert from '../../components/common/Alert' // Add import
 
 const WorkflowManagementPage = () => {
   const [warehouses, setWarehouses] = useState([])
@@ -19,6 +20,9 @@ const WorkflowManagementPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingStep, setEditingStep] = useState(null)
   const [submitError, setSubmitError] = useState('')
+  const [searchTerm, setSearchTerm] = useState('') // Add search state
+  const [alertMessage, setAlertMessage] = useState('') // Add state
+  const [showAlert, setShowAlert] = useState(false) // Add state
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -75,7 +79,18 @@ const WorkflowManagementPage = () => {
       setWorkflowLoading(true)
       try {
         const data = await warehouseService.getWorkflowsByWarehouse(warehouseId)
-        setWorkflows(data || [])
+        // Validate data structure
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          console.error('Invalid data structure for workflows:', data)
+          setWorkflows([])
+        } else {
+          // Convert object response to array
+          const workflowsArray = Object.values(data).map(workflow => ({
+            visitorType: workflow.visitorType,
+            steps: workflow.steps
+          }))
+          setWorkflows(workflowsArray)
+        }
         await fetchUsersByWarehouse(warehouseId) // Fetch users for this warehouse
       } catch (error) {
         console.error('Error fetching workflows:', error)
@@ -130,7 +145,8 @@ const WorkflowManagementPage = () => {
         await warehouseService.deleteWorkflow(id)
         handleWarehouseChange(selectedWarehouse) // Refetch
       } catch (error) {
-        alert(error.response?.data?.error || 'Failed to delete workflow step.')
+        setAlertMessage(error.response?.data?.error || 'Failed to delete workflow step.') // Replace alert
+        setShowAlert(true)
       }
     }
   }
@@ -140,6 +156,20 @@ const WorkflowManagementPage = () => {
     reset()
     setModalOpen(true)
   }
+
+  // Flatten workflows for search
+  const allSteps = workflows.flatMap(workflow =>
+    workflow.steps.map(step => ({
+      ...step,
+      visitorType: workflow.visitorType
+    }))
+  )
+
+  // Filter steps based on search term
+  const filteredSteps = allSteps.filter(step =>
+    step.visitorType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    step.approver.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <DashboardLayout title="Workflow Management">
@@ -159,69 +189,90 @@ const WorkflowManagementPage = () => {
         </div>
 
         {selectedWarehouse && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <div className="px-4 py-5 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Workflows for Selected Warehouse</h3>
-                <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Step
-                </Button>
-              </div>
-              {workflowLoading ? (
-                <div className="text-center py-8">Loading workflows...</div>
-              ) : workflows.length > 0 ? (
-                <div className="space-y-6">
-                  {workflows.map((workflow, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <h4 className="text-md font-semibold text-gray-900 mb-3">{workflow.visitorType}</h4>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Step No</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approver</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {workflow.steps.map((step) => (
-                              <tr key={step.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{step.stepNo}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{step.approver}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                  <div className="flex space-x-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEdit(step)}
-                                      className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleDelete(step.id)}
-                                      className="text-red-600 border-red-600 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
+          <>
+            {/* Search Input */}
+            <div className="mb-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">No workflows found for this warehouse.</div>
-              )}
+                <input
+                  type="text"
+                  placeholder="Search by visitor type or approver..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
-          </div>
+
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Workflows for Selected Warehouse</h3>
+                  <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Step
+                  </Button>
+                </div>
+                {workflowLoading ? (
+                  <div className="text-center py-8">Loading workflows...</div>
+                ) : filteredSteps.length > 0 ? (
+                  <div className="space-y-6">
+                    {workflows.map((workflow, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <h4 className="text-md font-semibold text-gray-900 mb-3">{workflow.visitorType}</h4>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Step No</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approver</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {workflow.steps.filter(step =>
+                                workflow.visitorType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                step.approver.toLowerCase().includes(searchTerm.toLowerCase())
+                              ).map((step) => (
+                                <tr key={step.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{step.stepNo}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{step.approver}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex space-x-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEdit(step)}
+                                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDelete(step.id)}
+                                        className="text-red-600 border-red-600 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">No workflows found for this warehouse.</div>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Modal for Create/Edit */}
@@ -290,6 +341,13 @@ const WorkflowManagementPage = () => {
             </div>
           </div>
         )}
+
+        <Alert
+          message={alertMessage}
+          isOpen={showAlert}
+          onClose={() => setShowAlert(false)}
+          type="error"
+        />
       </div>
     </DashboardLayout>
   )

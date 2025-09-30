@@ -59,6 +59,24 @@ export const visitorTypeService = {
     return response.data.data
   },
 
+  // New method for disabled visitor types
+  getAllDisabledVisitorTypes: async () => {
+    const response = await api.get('/api/visitortypes/getall/disabled')
+    return response.data.data
+  },
+
+  // Disable visitor type
+  disableVisitorType: async (id) => {
+    const response = await api.put(`/api/visitortypes/${id}/disable`)
+    return response.data
+  },
+
+  // Enable visitor type
+  enableVisitorType: async (id) => {
+    const response = await api.put(`/api/visitortypes/${id}/enable`)
+    return response.data
+  },
+
   createVisitor: async (data) => {
     const response = await publicApi.post('/api/visitors/create', data)
     return response.data.data

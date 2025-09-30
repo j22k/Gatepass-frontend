@@ -59,6 +59,24 @@ export const warehouseService = {
     return response.data.data
   },
 
+  // New method for disabled warehouses
+  getAllDisabledWarehouses: async () => {
+    const response = await api.get('/api/warehouse/getall/disabled')
+    return response.data.data
+  },
+
+  // Disable warehouse
+  disableWarehouse: async (id) => {
+    const response = await api.put(`/api/warehouse/${id}/disable`)
+    return response.data
+  },
+
+  // Enable warehouse
+  enableWarehouse: async (id) => {
+    const response = await api.put(`/api/warehouse/${id}/enable`)
+    return response.data
+  },
+
   // New method for workflows
   getWorkflowsByWarehouse: async (warehouseId) => {
     const response = await api.get(`/api/warehouse-workflow/${warehouseId}`)

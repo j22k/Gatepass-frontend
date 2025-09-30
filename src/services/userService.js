@@ -47,5 +47,17 @@ export const userService = {
   getUsersByWarehouseId: async (warehouseId) => {
     const response = await api.get(`/api/users/warehouse/${warehouseId}`)
     return response.data.data
+  },
+
+  // Disable a user
+  disableUser: async (id) => {
+    const response = await api.put(`/api/users/${id}/disable`)
+    return response.data
+  },
+
+  // Enable a user
+  enableUser: async (id) => {
+    const response = await api.put(`/api/users/${id}/enable`)
+    return response.data
   }
 }

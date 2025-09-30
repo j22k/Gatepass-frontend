@@ -6,6 +6,7 @@ import { warehouseService } from '../services/warehouseService'
 import { warehouseTimeSlotService } from '../services/warehouseTimeSlotService'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
+import Alert from '../components/common/Alert' // Add import
 
 const LandingPage = () => {
   const navigate = useNavigate()
@@ -23,6 +24,8 @@ const LandingPage = () => {
   const [warehouses, setWarehouses] = useState([])
   const [timeSlots, setTimeSlots] = useState([])
   const selectedWarehouse = watch('warehouseId')
+  const [alertMessage, setAlertMessage] = useState('') // Add state
+  const [showAlert, setShowAlert] = useState(false) // Add state
 
   useEffect(() => {
     fetchVisitorTypes()
@@ -86,7 +89,8 @@ const LandingPage = () => {
       }
       
       await visitorTypeService.createVisitor(formData)
-      alert('Visitor request submitted successfully!')
+      setAlertMessage('Visitor request submitted successfully!') // Replace alert
+      setShowAlert(true)
       reset() // Reset form after successful submission
     } catch (error) {
       console.error('Error submitting visitor request:', error)
@@ -123,7 +127,8 @@ const LandingPage = () => {
         errorMessage = 'Network error. Please check your connection and try again.'
       }
       
-      alert(errorMessage)
+      setAlertMessage(errorMessage) // Replace alert
+      setShowAlert(true)
     }
   }
 
@@ -297,6 +302,14 @@ const LandingPage = () => {
           </Button>
         </form>
       </div>
+
+      {/* Custom Alert */}
+      <Alert
+        message={alertMessage}
+        isOpen={showAlert}
+        onClose={() => setShowAlert(false)}
+        type={alertMessage.includes('successfully') ? 'success' : 'error'} // Dynamically set type based on message
+      />
     </div>
   )
 }

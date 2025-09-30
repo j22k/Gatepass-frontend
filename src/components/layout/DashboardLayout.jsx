@@ -36,7 +36,7 @@ const DashboardLayout = ({ children, title }) => {
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/login'
+    window.location.href = '/'
   }
 
   return (

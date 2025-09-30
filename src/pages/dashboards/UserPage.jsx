@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, Edit, Trash2, Users } from 'lucide-react'
+import { Plus, Edit, Trash2, Users, Search, Eye } from 'lucide-react' // Add Eye icon
 import { userService } from '../../services/userService'
 import { warehouseService } from '../../services/warehouseService'
 import { roleService } from '../../services/roleService'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import Confirm from '../../components/common/Confirm' // Add import for custom Confirm
 
 const UserPage = () => {
   const [users, setUsers] = useState([])
@@ -15,6 +16,10 @@ const UserPage = () => {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('') // Add search state
+  const [confirmOpen, setConfirmOpen] = useState(false) // Add state for confirm dialog
+  const [confirmMessage, setConfirmMessage] = useState('') // Add state for confirm message
+  const [confirmAction, setConfirmAction] = useState(null) // Add state for confirm action callback
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
   useEffect(() => {
@@ -86,20 +91,45 @@ const UserPage = () => {
 
   const handleEdit = (user) => {
     setEditingUser(user)
-    reset(user)
+    reset({
+      ...user,
+      isActive: user.isActive !== undefined ? user.isActive : true // Default to true if not set
+    })
     setModalOpen(true)
   }
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+  const handleDisable = async (id) => {
+    setConfirmMessage('Are you sure you want to disable this user?')
+    setConfirmAction(() => async () => {
       try {
-        await userService.deleteUser(id)
+        await userService.disableUser(id)
         fetchUsers()
       } catch (error) {
-        console.error('Error deleting user:', error)
+        console.error('Error disabling user:', error)
       }
-    }
+    })
+    setConfirmOpen(true)
   }
+
+  const handleEnable = async (id) => {
+    setConfirmMessage('Are you sure you want to enable this user?')
+    setConfirmAction(() => async () => {
+      try {
+        await userService.enableUser(id)
+        fetchUsers()
+      } catch (error) {
+        console.error('Error enabling user:', error)
+      }
+    })
+    setConfirmOpen(true)
+  }
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <DashboardLayout title="Users">
@@ -110,6 +140,22 @@ const UserPage = () => {
             <Plus className="w-4 h-4 mr-2" />
             Add User
           </Button>
+        </div>
+        
+        {/* Search Input */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by name, email, or role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
         </div>
         
         {loading ? (
@@ -124,16 +170,24 @@ const UserPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Address</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Role</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Warehouse</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.warehouseName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <Button
@@ -144,14 +198,27 @@ const UserPage = () => {
                             <Edit className="w-4 h-4 mr-1" />
                             Edit
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(user.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
-                          </Button>
+                          {user.isActive ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDisable(user.id)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Disable
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEnable(user.id)}
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Enable
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -166,7 +233,7 @@ const UserPage = () => {
       {/* Modal for adding/editing user */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4 sm:mx-auto">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {editingUser ? 'Edit User' : 'Add User'}
             </h3>
@@ -230,6 +297,17 @@ const UserPage = () => {
                 </select>
                 {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>}
               </div>
+              <div className="flex items-center">
+                <input
+                  id="isActive"
+                  type="checkbox"
+                  {...register('isActive')}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
+                  Active
+                </label>
+              </div>
               
               <div className="flex justify-end mt-4">
                 <Button
@@ -248,6 +326,16 @@ const UserPage = () => {
           </div>
         </div>
       )}
+
+      <Confirm
+        message={confirmMessage}
+        isOpen={confirmOpen}
+        onConfirm={() => {
+          if (confirmAction) confirmAction()
+          setConfirmOpen(false)
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </DashboardLayout>
   )
 }

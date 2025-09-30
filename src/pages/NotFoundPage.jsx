@@ -17,7 +17,7 @@ const NotFoundPage = () => {
           </p>
           <div className="mt-6">
             <Link
-              to="/login"
+              to="/"
               className="text-blue-600 hover:text-blue-500 font-medium"
             >
               Go to Login
