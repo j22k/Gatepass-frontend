@@ -88,4 +88,22 @@ export const visitorService = {
     const response = await api.get(`/api/visitors/user/${userId}/rejected`)
     return response.data.data
   },
+
+  // Get all visitor requests by logged-in receptionist's warehouse
+  getAllVisitorRequestsByReceptionistWarehouse: async () => {
+    const response = await api.get('/api/visitors/receptionist/all')
+    return response.data.data
+  },
+
+  // Get today's visitor requests by logged-in receptionist's warehouse
+  getTodayVisitorRequestsByReceptionistWarehouse: async () => {
+    const response = await api.get('/api/visitors/receptionist/today')
+    return response.data.data
+  },
+
+  // Update visitor status by receptionist
+  updateVisitorStatusByReceptionist: async (id, data) => {
+    const response = await api.put(`/api/visitors/receptionist/update/${id}`, data)
+    return response.data.data
+  },
 }
